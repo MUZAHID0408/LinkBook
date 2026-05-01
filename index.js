@@ -51,60 +51,51 @@ app.get("/api/persons", (request, response) => {
 });
 
 app.get("/info", (request, response) => {
-  const numPeople = persons.length;
   const currentTime = new Date().toString();
-
-  // console.log(numPeople);
-  // console.log(currentTime);
-  response.send(
-    `Phonebook has info for ${numPeople} people </br> ${currentTime}`,
-  );
+  Persons.countDocuments({}).then((count) => {
+    response.send(
+      `Phonebook has info for ${count} people </br> ${currentTime}`,
+    );
+  });
 });
 
 app.get("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  const person = persons.find((person) => person.id === id);
-  if (!person) {
-    return response.status(404).end();
-  }
-  response.json(person);
+  Persons.find(request.params.id).then((person) => {
+    response.json(person);
+  });
 });
 
 app.delete("/api/persons/:id", (request, response) => {
   const id = request.params.id;
-  persons = persons.filter((person) => Number(person.id) !== Number(id));
-  response.status(204).end();
+  Persons.findByIdAndDelete(id)
+    .then(() => {
+      response.status(204).end();
+    })
+    .catch((error) => {
+      response.status(400).json({ error: error.message });
+    });
 });
 
 app.post("/api/persons", (request, response) => {
-  if (!request.body) {
-    return response.status(400).end();
+  const body = request.body;
+  if (!body.name && !body.number) {
+    response
+      .status(400)
+      .json({ error: "Name and Number both are required!!!" });
   }
+  const person = new Persons({
+    name: body.name,
+    number: body.number,
+  });
 
-  const newName = request.body.name;
-  const newNumber = request.body.number;
-  const newId = Math.floor(Math.random() * 100000);
-  const personExist = persons.find(
-    (person) => person.name.toLowerCase() === newName.toLowerCase(),
-  );
-
-  if (personExist) {
-    return response.status(400).json({ Error: "Name must be unique" });
-  }
-  if (!newName) {
-    return response.status(400).json({ Error: "Name is required" });
-  }
-  if (!newNumber) {
-    return response.status(400).json({ Error: "Number is required" });
-  }
-
-  const newPerson = {
-    id: newId,
-    number: newNumber,
-    name: newName,
-  };
-  persons = persons.concat(newPerson);
-  response.json(newPerson);
+  person
+    .save()
+    .then((savedPerson) => {
+      response.json(savedPerson);
+    })
+    .catch((error) =>
+      response.status(400).send(`Something went wrong. ${error.message}`),
+    );
 });
 
 const PORT = process.env.PORT || 3001;
