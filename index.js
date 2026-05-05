@@ -64,7 +64,7 @@ app.get("/info", (request, response, next) => {
 });
 
 app.get("/api/persons/:id", (request, response, next) => {
-  const id = request.params.id
+  const id = request.params.id;
   Persons.findById(id)
     .then((person) => {
       response.json(person);
@@ -128,10 +128,11 @@ app.use(handleUnknownEndpoint);
 
 const errorHandler = (error, request, response, next) => {
   console.error(error);
-  if (error.message === "castError") {
+  if (error.name === "castError") {
     return response.status(400).send({ error: "Malformed ID" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
   }
-
   next(error);
 };
 
