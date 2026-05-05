@@ -16,7 +16,16 @@ const phoneBookSchema = new mongoose.Schema({
     minLength: 3,
     required: true,
   },
-  number: String,
+  number: {
+    type: String,
+    validate: {
+      validator: (phoneNumber) => {
+        return phoneNumber.length >= 9 && /^\d{2,3}-\d+$/.test(phoneNumber); //studied it using AI... Mongoose documentation is not that great for me....
+      },
+      message: (props) => `${props.value} is not a valid phone number!`,
+    },
+    required: [true, "User phone number required"],
+  },
 });
 
 phoneBookSchema.set("toJSON", {
